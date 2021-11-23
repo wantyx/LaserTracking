@@ -1,0 +1,3 @@
+key=1
+eye2hand_srcImagePath=./eye2hand_image/
+eye2hand_imgNumber=20
