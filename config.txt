@@ -1,3 +1,6 @@
-key=1
-eye2hand_srcImagePath=./eye2hand_image/
-eye2hand_imgNumber=20
+eye2hand_srcImagePath=./eye2hand_image/614/
+eye2hand_imgNumber=10
+imagePathWithNoLaser=./calibrateImages/
+imagePathWithLaser=./laserImages/
+laserImageNumber=3
+testImagePath=./testImage/

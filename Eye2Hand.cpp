@@ -1,5 +1,7 @@
 #include "Eye2Hand.h"
 
+using namespace cv;
+using namespace std;
 //手眼标定类构造函数
 Eye2Hand::Eye2Hand()
 {
@@ -16,6 +18,16 @@ cv::Mat Eye2Hand::get_eye2handRT()
 	return eye2handRT;
 }
 
+cv::Mat Eye2Hand::getCameraIntri()
+{
+	return cameraIntri;
+}
+
+cv::Mat Eye2Hand::getDistCoffe()
+{
+	return distCoffe;
+}
+
 void Eye2Hand::doEye2Hand()
 {
 	chess2camera();
@@ -29,6 +41,8 @@ void Eye2Hand::doEye2Hand()
 	eye2handRT = Mat(4, 4, CV_64F);
 	hconcat(eye2hand_R, eye2hand_T, RT);
 	vconcat(RT, temp, eye2handRT);
+	std::cout << eye2handRT << std::endl;
+	uv2xyz();
 }
 
 void Eye2Hand::chess2camera()
@@ -38,7 +52,7 @@ void Eye2Hand::chess2camera()
 		return;
 	}
 	cv::Size imageSize;		//图片的大小
-	vector<vector<Point2f>> pointBufs;  //所有标定图片的标定板上的点在图片中的像素值	
+
 	vector<vector<Point3f>> objectPoints(1); //标定板上的点在标定板坐标系下的三维坐标
 	
 	/*   标定板参数信息   */
@@ -66,11 +80,11 @@ void Eye2Hand::chess2camera()
 		bool isFound = findCirclesGrid(src, size, pointBuf, CALIB_CB_SYMMETRIC_GRID | CALIB_CB_CLUSTERING, blobDetector);
 		if (isFound) {
 			pointBufs.push_back(pointBuf);
-			/*drawChessboardCorners(src, size, Mat(pointBuf), true);
-			namedWindow("view", 0);
-			imshow("view", src);
-			waitKey(0);
-			destroyAllWindows();*/
+			//drawChessboardCorners(src, size, Mat(pointBuf), true);
+			//namedWindow("view", 0);
+			//imshow("view", src);
+			//waitKey(0);
+			//destroyAllWindows();
 		}
 		else {
 			cout << "第" << i << "张标定图片未找到角点" << endl;
@@ -80,33 +94,26 @@ void Eye2Hand::chess2camera()
 	/*计算每一个点在标定板坐标系下的位置 并复制多份用于每一张图片的识别*/
 	cal_pointInBoard(size, squareSize, objectPoints[0]);
 	objectPoints.resize(pointBufs.size(), objectPoints[0]);
-	cv::calibrateCamera(objectPoints, pointBufs, imageSize, cameraIntri, distCoffe, chess2camera_R, chess2camera_T);
+	double rms = cv::calibrateCamera(objectPoints, pointBufs, imageSize, cameraIntri, distCoffe, chess2camera_R, chess2camera_T);
+	std::cout << "rms:" << rms << std::endl;
 }
 
 
 /*从机械臂中获取末端到基坐标的RT转换*/
 void Eye2Hand::end2base() {
 	 double p[][6] = {
-	{464.10,-440.37,90.77,178.9365,16.1724,-123.4},
-	{346.45,-525.64,81.92,-176.132,42.301,-130.531},
-	{379.59,-566.75,91.9,172.269,42.997,-138.912},
-	{459.84,-429.66,96.44,178.35,8.6,-115.03},
-	//{405.12,-410.95,67.85,-165.812,5.71,-110.69},
-	{323.58,-473.92,45.65,-148.789,23.363,-97.095},
-	//{488.91,-420.19,68.89,175.137,7.82,-125.32},
-	{473.37,-431.83,89.49,-179.218,19.6562,-113.6023},
-	{520.93,-474.12,87.91,157.2959,12.9894,-120.2483},
-	//{461.55,-407.21,77.60,-179.6765,6.845,-112.648},
-	{393.86,-370.15,64.14,-163.127,8.8114,-107.2023},
-	{442.51,-445.44,96.28,-172.5634,7.2999,-112.527},
-	//{469.88,-440.26,88.60,179.8162,12.4889,-112.3975},
-	{420.92,-481.03,69.93,-170.196,32.6476,-106.405},
-	{352.71,-469.80,64.33,-164.458,29.7638,-107.0845},
-	{359.87,-460.33,69.92,-166.30478,14.7287,-105.5509},
-	{414.30,-401.45,93.89,-175.41227,18.8998,-110.045},
-	{426.72,-394.48,107.47,-173.33689,18.193,-106.7287},
-	{390.58,-480.43,75.69,-167.5752,14.8072,-93.169},
-	{408.19,-469.12,101.42,-175.190,33.19068,-127.1978}
+		 /*{-196.44,469.58,34.21,-156.204,-31.800,14.471},*/
+		 //{-128.45,523.96,37.34,-168.413,-21.53,8.937},
+		 //{-105.18,528.93,47.14,-166.455,0.660,23.143},
+		 {-205.25,560.77,49,171.261,-35.85,28.807},
+		 {-131.54,522.73,103.78,-170.47,-12.805,26.184},
+		 {-190.79,505.61,99.48,-172.88,-45.799,35.847},
+		 {-145.19,547.73,104.59,-179.27,-13.24,18.918},
+		 {-120.79,551.81,104.18,177.381,-29.926,21.382},
+		 {-91.71,516.98,73.10,-160.789,-12.564,13.856},
+		 {-118.68,521.94,81.66,-169.516,-27.88,16.64},
+		 {-89.42,567.8,66.97,-174.17,3.226,14.619},
+		 {-116.70,572.89,75.89,-170.04,-20.258,19.280}
 	};
 	/* 将上面的p全部转换为矩阵，存到对应的vector中 */
 	for (int i = 0; i < sizeof(p) / sizeof(p[0]); i++) {
@@ -116,4 +123,74 @@ void Eye2Hand::end2base() {
 		end2baseRs.push_back(end2base_R);
 		end2baseTs.push_back(calculateT(p[i]));
 	}
+}
+
+void Eye2Hand::uv2xyz()
+{
+	Mat cameraIntriMat_inv = cameraIntri.inv();
+	for (int i = 0; i < chess2camera_R.size(); i++) {
+		vector<cv::Point2f> undistCenterPoints = pointBufs.at(i);
+		cv::Mat rVec;
+		cv::Mat tVec;
+		cv::Mat rMat;
+		for (int j = 0; j < undistCenterPoints.size(); j++) {
+			Mat undistCenterPoint = Mat::zeros(3, 1, CV_64F);
+
+			/*通过外参得到对应的标定板平面的参数*/
+			rVec = chess2camera_R.at(i);
+			tVec = chess2camera_T.at(i);
+			Rodrigues(rVec, rMat);//罗德里格斯将旋转向量变换为矩阵
+			double r13 = rMat.at<double>(0, 2);
+			double r23 = rMat.at<double>(1, 2);
+			double r33 = rMat.at<double>(2, 2);
+			double t1 = tVec.at<double>(0);
+			double t2 = tVec.at<double>(1);
+			double t3 = tVec.at<double>(2);
+			double A_caliBoard = r13;
+			double B_caliBoard = r23;
+			double C_caliBoard = r33;
+			double D_caliBoard = r13 * t1 + r23 * t2 + r33 * t3;
+
+
+			undistCenterPoint.at<double>(0, 0) = undistCenterPoints.at(j).x;
+			undistCenterPoint.at<double>(1, 0) = undistCenterPoints.at(j).y;
+			undistCenterPoint.at<double>(2, 0) = 1;
+			Mat centerPointInCameraOXY = Mat::zeros(3, 1, CV_64F);
+			centerPointInCameraOXY = cameraIntriMat_inv * undistCenterPoint;
+			double a = centerPointInCameraOXY.at<double>(0, 0);
+			double b = centerPointInCameraOXY.at<double>(1, 0);
+
+			double X = D_caliBoard * a / (A_caliBoard * a + B_caliBoard * b + C_caliBoard);
+			double Y = D_caliBoard * b / (A_caliBoard * a + B_caliBoard * b + C_caliBoard);
+			double Z = D_caliBoard / (A_caliBoard * a + B_caliBoard * b + C_caliBoard);
+			Point3f point;
+			point.x = X;
+			point.y = Y;
+			point.z = Z;
+			Mat pp = Mat(4, 1, CV_64F);
+			pp.at<double>(0, 0) = X;
+			pp.at<double>(1, 0) = Y;
+			pp.at<double>(2, 0) = Z;
+			pp.at<double>(3, 0) = 1;
+			//cout << point << endl;
+			double p[][6] = {
+			 {-205.25,560.77,49,171.261,-35.85,28.807},
+			 {-131.54,522.73,103.78,-170.47,-12.805,26.184},
+			 {-190.79,505.61,99.48,-172.88,-45.799,35.847},
+			 {-145.19,547.73,104.59,-179.27,-13.24,18.918},
+			 {-120.79,551.81,104.18,177.381,-29.926,21.382},
+			 {-91.71,516.98,73.10,-160.789,-12.564,13.856},
+			 {-118.68,521.94,81.66,-169.516,-27.88,16.64},
+			 {-89.42,567.8,66.97,-174.17,3.226,14.619},
+			 {-116.70,572.89,75.89,-170.04,-20.258,19.280}
+			};
+			for (int i = 0; i < sizeof(p) / sizeof(p[0]); i++) {
+				end2baseRT.push_back(calEnd2Base(p[i]));
+			}
+			Mat result = end2baseRT.at(i) * eye2handRT * pp;
+			//cout << "point:" << result << endl;
+		}
+		//cout << "====================================================" << endl;
+	}
+	//cout << "====================================================" << endl;
 }

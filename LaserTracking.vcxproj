@@ -66,6 +66,8 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\opencv配置文件\openCV450.props" />
+    <Import Project="..\..\opencv配置文件\Eigen.props" />
+    <Import Project="..\..\opencv配置文件\MSV.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -140,15 +142,34 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Eye2Hand.cpp" />
     <ClCompile Include="GlobalSetting.cpp" />
+    <ClCompile Include="LaserImage.cpp" />
+    <ClCompile Include="LaserPlane.cpp" />
+    <ClCompile Include="LaserPlaneWithOneImage.cpp" />
     <ClCompile Include="LaserTracking.cpp" />
+    <ClCompile Include="Socket.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="TestThread.cpp" />
     <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Camera.h" />
     <ClInclude Include="Eye2Hand.h" />
     <ClInclude Include="GlobalSetting.h" />
+    <ClInclude Include="LaserImage.h" />
+    <ClInclude Include="LaserPlane.h" />
+    <ClInclude Include="LaserPlaneWithOneImage.h" />
+    <ClInclude Include="Socket.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="TestThread.h" />
     <ClInclude Include="Utils.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="cpp.hint" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
